@@ -1,12 +1,93 @@
 # Contact-Implicit MPC Utilities
 Personal scripts for contact-implicit MPC project, including:
 
+ 1. [LCM log analysis](#lcm-log-analysis)
  1. [Camera calibration](#camera-calibration)
- 2. [Quaternion Hessian-based cost matrix](#quaternion-hessian-based-cost-matrix)
- 3. [Arc repositioning](#arc-repositioning)
- 4. [Quaternion visualization](#quaternion-visualization)
- 5. [LCS debugging](#lcs-debugging)
- 6. [URDF inspection](#urdf-inspection)
+ 1. [Quaternion Hessian-based cost matrix](#quaternion-hessian-based-cost-matrix)
+ 1. [Arc repositioning](#arc-repositioning)
+ 1. [Quaternion visualization](#quaternion-visualization)
+ 1. [LCS debugging](#lcs-debugging)
+ 1. [URDF inspection](#urdf-inspection)
+
+
+## LCM Log Analysis
+
+The LCM log analysis script, [lcm_log_processing.py](./lcm_log_processing.py), loads and analyzes experiments contained in LCM logs.  This script can perform the following functions:
+
+ - Calculate time-to-goal statistics.
+ - Combine statistics from multiple logs.
+ - Generate videos that overlay helpful meshcat visuals on top of a camera feed.
+ - Produce single-goal or multi-consecutive-goal videos.
+ - Produce plots such as cumulative density function (CDF) for time-to-goal per success threshold, error over time with mode switching per goal, etc.
+ - Detect hardware violations.  This is especially helpful for simulation experiments where hardware violations would not have prevented the experiment from continuing.
+ - Export the results into a pickle file for later retrieval/analysis.
+
+The general format is:
+```
+python lcm_log_processing.py [mode] path/to/lcm/folder [optional flags]
+```
+
+> 🚧 Note:  There are some features of this script that are currently unfinished or broken, e.g. the `single` command is broken but `multi` can be used with a single log file.  There is additionally the start to producing a demo video, which is presently unfinished.
+
+Below are a few examples.  All have other possible flags available.
+
+
+### Example usage:  Single log
+Can still use the `multi` command:
+```
+python lcm_log_processing.py multi /home/bibit/Videos/franka_experiments/2025/01_29_25/000007 --interactive
+```
+
+### Example usage:  Consolidate multiple logs
+List multiple log folders in a row with the same `multi` command.
+
+### Example usage:  Export results
+This can be done with the same `multi` command but with the flag `--export-name={NAME}`.  The result will be saved as `{NAME}.pickle` in the `--save-to` folder (if not provided as a flag, this will default to the `tmp` folder).  This can be for single- or multi-log analyses.
+
+### Example usage:  Detect hardware violations for MJPC comparison.
+This requires loading already exported pickle files.
+```
+python lcm_log_processing.py mjpc /path/to/pickle/dir
+```
+As currently written, this looks into the provided pickle folder for:
+
+ - `ours_sim.pickle`
+ - MJPC comparisons of the form `mjpc_ee_vel_0-24.pickle` where the `0-24` means 0.24 end effector velocity cost weight.
+
+This command then generates plots to compare the approaches.
+
+
+### Example usage:  Generate videos
+This is a multi-step process that is recommended for single logs instead of multi-logs.  This currently works for jack and push T examples.  Correspondences between log files and camera videos need to be known to the code, so these are hard-coded into the `LOG_FILEPATHS_TO_VIDEOS` dictionary, whose keys are the log folders and whose contents have the long video filepath and a directory to which single-goal videos can be written.  For new experiments, new keys and contents need to be added to this dictionary.
+
+#### Per-goal:
+1. Create trimmed camera videos.
+   ```
+   python lcm_log_processing.py multi /log/dir --trim-times
+   ```
+    - This prints `ffmpeg` commands that can be run manually (eventually this could be good to automate).
+    - This also creates a folder which the `ffmpeg` commands will store results to.
+2. Create trimmed meshcat goal videos.
+   ```
+   python lcm_log_processing.py multi /log/dir --video --trim-times
+   ```
+    - This saves files which will need to be copied over to the folder.
+3. Overlay and add final success frame.
+   ```
+   python lcm_log_processing.py multi /log/dir --overlay --trim-times
+   ```
+    - Final results are in the folder with names of the form `overlay_{log_date}_log_{num}_goal_{goal}_success.mp4`.
+
+#### Continuous with goal count:
+1. Create meshcat goal video for the continuous log.
+   ```
+   python lcm_log_processing.py multi /log/dir --video
+   ```
+    - This saves files which will need to be copied over to the folder.
+2. Overlay and add a goal counter.
+   ```
+   python lcm_log_processing.py multi /log/dir --overlay
+   ```
 
 
 ## Camera Calibration

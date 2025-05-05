@@ -48,6 +48,18 @@ def calibration_subdir(subdir: str):
 def urdf_dir():
     return op.join(example_dir(), 'urdf')
 
+def vis_urdf_dir():
+    return op.join(cimpc_dir(), 'urdfs')
+
+
+### Add dairlib lcmtypes to path ###
+"""This is required for importing `dairlib` in a python file to access dairlib
+LCM types, e.g. dairlib.lcmt_c3_state."""
+def add_dair_lcmtypes_to_path():
+    import sys
+    lcmtypes_dir = op.join(dairlib_dir(), 'bazel-bin', 'lcmtypes')
+    sys.path.append(lcmtypes_dir)
+
 
 ### Filepaths ###
 def jack_urdf_path():
@@ -58,6 +70,22 @@ def ground_urdf_path():
 
 def end_effector_urdf_path():
     return op.join(urdf_dir(), 'end_effector_full.urdf')
+
+def jack_with_triad_urdf_path():
+    return op.join(vis_urdf_dir(), 'jack_with_triad.urdf')
+
+def goal_triad_urdf_path():
+    return op.join(vis_urdf_dir(), 'goal_triad.urdf')
+
+def push_t_urdf_path():
+    return op.join(vis_urdf_dir(), 'T_vertical_obj.urdf')
+
+def goal_push_t_urdf_path():
+    return op.join(vis_urdf_dir(), 'T_vertical_obj_green.urdf')
+
+def camera_urdf_path(first: bool = True):
+    filename = 'camera_model.urdf' if first else 'camera_model_2.urdf'
+    return op.join(vis_urdf_dir(), filename)
 
 
 ### Load parameters from yaml files ###
