@@ -1,8 +1,11 @@
 # Virtual environment
 venv/
 
-# Generated camera calibrations
+# Camera calibrations
 calibrations/
 
 # Pycache
 __pycache__/
+
+# Temporary files
+tmp/

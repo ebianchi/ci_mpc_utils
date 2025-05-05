@@ -16,9 +16,10 @@ from cv2 import aruco
 from datetime import datetime
 import matplotlib.pyplot as plt
 import numpy as np
-import os
 import os.path as op
 import pyrealsense2 as rs
+
+import file_utils
 
 
 COMPUTE_EXTRINSICS = True
@@ -39,12 +40,10 @@ WORLD_T_POINT = np.array([[1, 0, 0, 0.07855],
                           [0, 0, 0, 1]])
 
 
-timestamp = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+TIMESTAMP = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
 
 def get_filepath(filename):
-    dir_path = op.dirname(op.realpath(__file__))
-    cam_cal_dir = op.join(dir_path, 'calibrations', timestamp)
-    os.makedirs(cam_cal_dir, exist_ok=True)
+    cam_cal_dir = file_utils.calibration_subdir(TIMESTAMP)
     print(f'Making file: {op.join(cam_cal_dir, filename)}')
     return op.join(cam_cal_dir, filename)
 

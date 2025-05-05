@@ -2,6 +2,7 @@
 to be installed at same directory as dairlib repo."""
 
 import numpy as np
+import os
 import os.path as op
 import yaml
 
@@ -16,6 +17,9 @@ assert op.isdir(DAIRLIB_DIR), f'Did not find dairlib at {DAIRLIB_DIR}'
 def dairlib_dir():
     return DAIRLIB_DIR
 
+def cimpc_dir():
+    return op.join(HEAD_DIR, 'ci_mpc_utils')
+
 def example_dir():
     return op.join(dairlib_dir(), 'examples/sampling_c3')
 
@@ -26,10 +30,26 @@ def subexample_dir(system: str):
     assert op.exists(sub_dir), f'Did not find {sub_dir}'
     return sub_dir
 
-### Filepaths ###
+def tmp_dir():
+    tmp_dir = op.join(cimpc_dir(), 'tmp')
+    os.makedirs(tmp_dir, exist_ok=True)
+    return tmp_dir
+
+def calibration_dir():
+    cam_cal_dir = op.join(cimpc_dir(), 'calibrations')
+    os.makedirs(cam_cal_dir, exist_ok=True)
+    return cam_cal_dir
+
+def calibration_subdir(subdir: str):
+    cal_sub_dir = op.join(calibration_dir(), subdir)
+    os.makedirs(cal_sub_dir, exist_ok=True)
+    return cal_sub_dir
+
 def urdf_dir():
     return op.join(example_dir(), 'urdf')
 
+
+### Filepaths ###
 def jack_urdf_path():
     return op.join(urdf_dir(), 'jack.sdf')
 
@@ -38,6 +58,7 @@ def ground_urdf_path():
 
 def end_effector_urdf_path():
     return op.join(urdf_dir(), 'end_effector_full.urdf')
+
 
 ### Load parameters from yaml files ###
 def load_franka_sim_params(system: str):
