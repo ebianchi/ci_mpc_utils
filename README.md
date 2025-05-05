@@ -5,6 +5,7 @@ Personal scripts for contact-implicit MPC project, including:
  2. [Quaternion Hessian-based cost matrix](#quaternion-hessian-based-cost-matrix)
  3. [Arc repositioning](#arc-repositioning)
  4. [Quaternion visualization](#quaternion-visualization)
+ 5. [LCS debugging](#lcs-debugging)
 
 
 ## Camera Calibration
@@ -60,3 +61,8 @@ The arc repositioning test script, [arc_repositioning.py](./arc_repositioning.py
 
 The quaternion visualization script, [quat_visualizer.py](./quat_visualizer.py), generates and visualizes the 8 stable orientations of the jack.  Renders the 8 quaternions as triads in a meshcat window, and prints out the C++ definitions for each of them.
 ![Example quat visualizer meshcat output](./files/quat_visualizer.png)
+
+
+## LCS Debugging
+
+The LCS debugging script, [lcs_debugging.py](./lcs_debugging.py), runs some tests on a hard-coded set of LCS matrices to ensure their compatibility and the accuracy of the derivations.
