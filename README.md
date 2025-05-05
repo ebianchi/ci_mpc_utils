@@ -3,6 +3,7 @@ Personal scripts for contact-implicit MPC project, including:
 
  1. [Camera calibration](#camera-calibration)
  2. [Quaternion Hessian-based cost matrix](#quaternion-hessian-based-cost-matrix)
+ 3. [Arc repositioning](#arc-repositioning)
 
 
 ## Camera Calibration
@@ -43,6 +44,11 @@ $$\text{where} \quad q_\text{rel} = q_\text{quat,curr}^{-1} \otimes q_\text{quat
 
 for $\otimes$ as quaternion product.  The $\arctan$ indicates a problematic region where its argument is zero -- this occurs precisely when $q_\text{quat,curr} = q_\text{quat,goal}$.  The landscape is not strictly convex at this point, and is non-convex in the local region.  Thus, the naive approximation to use the 2-norm error between the elements of $q_\text{quat,curr}$ and $q_\text{quat,goal}$,
 
-$$\tilde{\theta}_\text{error}^2 = \left\lVert{q_\text{quat,curr} - q_\text{quat,goal}}\right\rVert^2.$$
+$$\tilde{\theta}_\text{error}^2 = \left\lVert {q_\text{quat,curr} - q_\text{quat,goal}} \right\rVert ^2.$$
 
 poorly captures the true $\theta_\text{error}$ when it is small.  To address this, we set the 4x4 portion of $Q$ (throughout the entire MPC horizon) corresponding to the object quaternion to be the Hessian of $\theta_\text{error}^2$ with respect to the elements of the current quaternion, about the $q_\text{quat,curr}, q_\text{quat,goal}$ operating point.  Even restricted to errors below $\pi$ radians, this Hessian will contain a zero or negative eigenvalue, since scaling $q_\text{quat,curr}$ does not impact $\theta_\text{error}$.  We regularize $Q$, adding $\gamma \cdot \mathbb{I}_{4\times4}$, where $\gamma$ is the absolute value of the most negative eigenvalue of the Hessian to ensure positive-semi definiteness.  Implementing this portion of $Q$ was a critical step to effectively and reliably achieve orientation goals.
+
+
+## Arc Repositioning
+
+The arc repositioning test script, [arc_repositioning.py](./arc_repositioning.py), tests a repositioning strategy that follows an arc on a spherical surface.  The strategy first moves along a straight line colinear with the end effector's current location and the object's current location towards a specified repositioning radius away from the object, then follows a path along that spherical surface, then follows a straight line towards the sample.  The script has 3 hard-coded test cases, which can be selected by setting the `TEST_I` index.
