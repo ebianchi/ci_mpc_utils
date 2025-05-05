@@ -53,8 +53,10 @@ poorly captures the true $\theta_\text{error}$ when it is small.  To address thi
 ## Arc Repositioning
 
 The arc repositioning test script, [arc_repositioning.py](./arc_repositioning.py), tests a repositioning strategy that follows an arc on a spherical surface.  The strategy first moves along a straight line colinear with the end effector's current location and the object's current location towards a specified repositioning radius away from the object, then follows a path along that spherical surface, then follows a straight line towards the sample.  The script has 3 hard-coded test cases, which can be selected by setting the `TEST_I` index.
+![Example arc repositioning output](./files/arc_repositioning.png)
 
 
 ## Quaternion Visualization
 
 The quaternion visualization script, [quat_visualizer.py](./quat_visualizer.py), generates and visualizes the 8 stable orientations of the jack.  Renders the 8 quaternions as triads in a meshcat window, and prints out the C++ definitions for each of them.
+![Example quat visualizer meshcat output](./files/quat_visualizer.png)

@@ -3,3 +3,6 @@ venv/
 
 # Generated camera calibrations
 calibrations/
+
+# Pycache
+__pycache__/
