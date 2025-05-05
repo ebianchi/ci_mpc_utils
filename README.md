@@ -6,6 +6,7 @@ Personal scripts for contact-implicit MPC project, including:
  3. [Arc repositioning](#arc-repositioning)
  4. [Quaternion visualization](#quaternion-visualization)
  5. [LCS debugging](#lcs-debugging)
+ 6. [URDF inspection](#urdf-inspection)
 
 
 ## Camera Calibration
@@ -66,3 +67,7 @@ The quaternion visualization script, [quat_visualizer.py](./quat_visualizer.py),
 ## LCS Debugging
 
 The LCS debugging script, [lcs_debugging.py](./lcs_debugging.py), runs some tests on a hard-coded set of LCS matrices to ensure their compatibility and the accuracy of the derivations.
+
+## URDF Inspection
+
+The URDF inspection script, [urdf_inspection.py](./urdf_inspection.py), loads a URDF file into a Drake plant and prints out some of its properties, such as the mass matrix and center of mass.

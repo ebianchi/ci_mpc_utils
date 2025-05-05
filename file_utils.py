@@ -36,6 +36,9 @@ def jack_urdf_path():
 def ground_urdf_path():
     return op.join(urdf_dir(), 'ground.urdf')
 
+def end_effector_urdf_path():
+    return op.join(urdf_dir(), 'end_effector_full.urdf')
+
 ### Load parameters from yaml files ###
 def load_franka_sim_params(system: str):
     sub_dir = subexample_dir(system)
