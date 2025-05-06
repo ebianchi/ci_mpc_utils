@@ -284,6 +284,12 @@ MJPC_COLORS_PER_EE_VEL = {
     1000: '#30ba8f',  # For our controller.
 }
 
+COLOR_PER_GOAL_OUTCOME = {
+    'Success': '#70AD47',
+    'Violated hardware limits': '#ED7D31',
+    'Cut off after 400s': '#A5A5A5'
+}
+
 global_is_interactive = False
 
 
@@ -473,11 +479,11 @@ def relative_angle_from_quats(q, r):
     angle = (qr * rr.inv()).magnitude()
     return angle
 
-def joint_mjpc_cdf(ras_by_ee_vel: dict, our_ra):
+def joint_mjpc_cdf(ras_by_ee_vel: dict, our_ra, long_legend: bool = True):
     ee_vels = np.array(list(ras_by_ee_vel.keys()) + [1000])
     ras = np.array(list(ras_by_ee_vel.values()) + [our_ra])
 
-    # Sort based on shortest to longest time to goal.
+    # Sort based on EE velocity cost.
     sorted_idx = ee_vels.argsort()
     sorted_ee_vels = ee_vels[sorted_idx]
     sorted_ras = ras[sorted_idx]
@@ -486,7 +492,8 @@ def joint_mjpc_cdf(ras_by_ee_vel: dict, our_ra):
     plt.rcParams.update({'font.family': 'serif'})
 
     # Generate a plot of cumulative distribution functions.
-    fig, axs = plt.subplots(1, 1, figsize=(10,4))
+    figsize = (10,4) if long_legend else (8,4)
+    fig, axs = plt.subplots(1, 1, figsize=figsize)
     for ee_vel, ra in zip(sorted_ee_vels, sorted_ras):
         color = MJPC_COLORS_PER_EE_VEL[ee_vel]
 
@@ -515,8 +522,11 @@ def joint_mjpc_cdf(ras_by_ee_vel: dict, our_ra):
         cdf = np.cumsum(pdf)
         bins_count[0] = 0
         cdf = np.concatenate([[0], cdf])
-        label = f'MJPC {ee_vel:.2f}' if ee_vel < 1000 else 'Ours         '
-        label += f' / {trials} / {cut_off} / {hw_viols}'
+        if long_legend:
+            label = f'MJPC {ee_vel:.2f}' if ee_vel < 1000 else 'Ours         '
+            label += f' / {trials} / {cut_off} / {hw_viols}'
+        else:
+            label = f'MJPC {ee_vel:.2f}' if ee_vel < 1000 else 'Ours'
         axs.plot(bins_count, cdf, color=color, linewidth=5, label=label)
 
     axs.set_xlabel('Time Limit [s]', fontsize=16)
@@ -526,15 +536,76 @@ def joint_mjpc_cdf(ras_by_ee_vel: dict, our_ra):
     axs.set_ylim([0, 1])
     axs.set_xlim([0, CDF_TIME_CUTOFF])
     axs.tick_params(axis='both', which='major', labelsize=12)
-    fig.suptitle('Fraction of Goals Achieved Within Time Limit', fontsize=18)
+    fig.suptitle('3D Jack Simulation, Goal Fraction Achieved Within Time Limit',
+                 fontsize=18)
 
+    legend_title = 'Approach / AG\u2191 / COG\u2193 / HWV\u2193' \
+        if long_legend else None
     axs.legend(bbox_to_anchor=(1.02, 1.04), loc='upper left',
-               title='Approach / AG\u2191 / COG\u2193 / HWV\u2193', fontsize=14,
-               title_fontsize=15)
+               title=legend_title, fontsize=14, title_fontsize=15)
     plt.tight_layout()
 
     plt.grid()
-    save_current_figure('mjpc_cdf', store_folder=ra.save_folder)
+    plt_name = 'mjpc_cdf' if long_legend else 'mjpc_cdf_concise'
+    save_current_figure(plt_name, store_folder=ra.save_folder)
+
+def joint_mjpc_violations_bar(ras_by_ee_vel: dict, our_ra):
+    ee_vels = np.array(list(ras_by_ee_vel.keys()) + [1000])
+    ras = np.array(list(ras_by_ee_vel.values()) + [our_ra])
+
+    # Sort based on EE velocity cost (put higher cost at the bottom, to match
+    # CDF plot).
+    sorted_idx = np.flip(ee_vels.argsort())
+    sorted_ee_vels = ee_vels[sorted_idx]
+    sorted_ras = ras[sorted_idx]
+
+    # Plot formatting.
+    plt.rcParams.update({'font.family': 'serif'})
+
+    # Keep track of successful, violating, and cut off goal attempts.
+    labels = []
+    n_successful_no_violations, n_violations, n_cut_offs = [], [], []
+    for ee_vel, ra in zip(sorted_ee_vels, sorted_ras):
+        labels.append(f'MJPC {ee_vel:.2f}' if ee_vel < 1000 else 'Ours')
+
+        # Get the hardware violations.
+        problem_goals = []
+        problem_goals += ra.goal_violations[JOINT_LIMIT_VIO_KEY]
+        problem_goals += ra.goal_violations[JOINT_VEL_VIO_KEY]
+        problem_goals += ra.goal_violations[JOINT_TORQUE_VIO_KEY]
+        valid_goal_mask = np.array([i not in problem_goals for i in range(
+            1, ra.n_goals_achieved[-1].item() + 2)])
+        n_successful_no_violations.append(valid_goal_mask.sum())
+        n_violations.append((~valid_goal_mask).sum())
+
+        n_cut_offs.append(MJPC_CUT_OFF_GOALS_PER_EE_VEL[ee_vel])
+
+    goal_outcome_to_data = {}
+    goal_outcome_to_data['Success'] = np.array(n_successful_no_violations)
+    goal_outcome_to_data['Violated hardware limits'] = np.array(n_violations)
+    goal_outcome_to_data['Cut off after 400s'] = np.array(n_cut_offs)
+
+    # Generate a bar chart.
+    fig, ax = plt.subplots(figsize=(8,4))
+    bottom = np.zeros_like(goal_outcome_to_data['Success'])
+    height = 1.0
+    for outcome, counts in goal_outcome_to_data.items():
+        p = ax.barh(labels, counts, height, label=outcome, left=bottom,
+                    color=COLOR_PER_GOAL_OUTCOME[outcome])
+        bottom += counts
+
+        count_labels = [str(num) if num > 0 else '' for num in counts.tolist()]
+        ax.bar_label(p, labels=count_labels, label_type='center')
+
+    ax.set_title('3D Jack Simulation, Goal Outcomes', fontsize=18)
+    ax.legend(fontsize=14)  #, loc=(0.35, 0.335))
+    ax.set_ylim([-0.5, 9.5])
+    ax.set_xlim([0, 60])
+    ax.set_xlabel('Attempted Goals', fontsize=16)
+    ax.tick_params(axis='y', which='major', labelsize=14)
+    plt.tight_layout()
+
+    save_current_figure('mjpc_hwv', store_folder=ra.save_folder)
 
 
 class ResultsAnalyzer:
@@ -2267,6 +2338,12 @@ def mjpc_command(pickle_dir: str, interactive: bool, save_to: str,
             title_suffix=f'EE Velocity cost = {ee_vel}')
     result_analyzer_ours.visualize_goals_with_violations(title_suffix=f'Ours')
     joint_mjpc_cdf(result_analyzers_by_ee_vel, result_analyzer_ours)
+    joint_mjpc_cdf(result_analyzers_by_ee_vel, result_analyzer_ours,
+                   long_legend=False)
+    joint_mjpc_violations_bar(result_analyzers_by_ee_vel, result_analyzer_ours)
+    
+    if interactive:
+        breakpoint()
 
 
 @cli.command('multi')
